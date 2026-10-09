@@ -25,6 +25,7 @@ const state = {
   phaseTransitioning: false,
   singleWarningArmed: false,
   signals: false,
+  draftAnswer: "",
   online: navigator.onLine
 };
 
@@ -477,6 +478,7 @@ async function startGame() {
 }
 
 async function beginNextRound() {
+  state.draftAnswer = "";
   const used = new Set(Object.keys(state.room.usedQuestions || {}).map(Number));
   const available = QUESTIONS.map((_, index) => index).filter((index) => !used.has(index));
 
@@ -554,18 +556,34 @@ function createAnswerForm() {
   form.id = "answer-form";
 
   const current = state.room.answers?.[state.uid]?.text || "";
+  const draft = state.draftAnswer || current;
+
   form.innerHTML = `
     <div class="field">
       <label for="answer-input">Deine Antwort</label>
-      <input id="answer-input" class="answer-input" maxlength="60" autocomplete="off" enterkeyhint="done" placeholder="Antwort eingeben" value="${escapeAttr(current)}">
-      <span class="char-count"><span id="char-count">${current.length}</span> / 60</span>
+      <input
+        id="answer-input"
+        class="answer-input"
+        maxlength="60"
+        autocomplete="off"
+        enterkeyhint="done"
+        placeholder="Antwort eingeben"
+        value="${escapeAttr(draft)}"
+      />
+      <span class="char-count"><span id="char-count">${draft.length}</span> / 60</span>
     </div>
     <p id="answer-error" class="form-error" role="alert" hidden></p>
-    <button class="button button-primary" type="submit">${current ? "Antwort aktualisieren" : "Antwort bestätigen"}</button>`;
+    <button class="button button-primary" type="submit">
+      ${current ? "Antwort aktualisieren" : "Antwort bestätigen"}
+    </button>
+  `;
 
   const input = $("#answer-input", form);
+  const count = $("#char-count", form);
+
   input.addEventListener("input", () => {
-    $("#char-count", form).textContent = input.value.length;
+    state.draftAnswer = input.value;
+    count.textContent = input.value.length;
   });
 
   form.addEventListener("submit", submitAnswer);
@@ -598,6 +616,9 @@ async function submitAnswer(event) {
       text: answer,
       submittedAt: serverNow()
     });
+
+    state.draftAnswer = answer;
+    
     submit.textContent = "Gespeichert ✓";
     signal("success");
 
@@ -887,6 +908,8 @@ function renderEnded() {
 }
 
 async function rematch() {
+  state.draftAnswer = "";
+  
   const patch = {
     status: "lobby",
     round: 0,
@@ -972,6 +995,7 @@ async function handleRemovedOrClosed() {
   disconnectRoomListener();
   state.roomCode = null;
   state.room = null;
+  state.draftAnswer = "";
   roomPill.hidden = true;
   showHome();
 
@@ -995,6 +1019,7 @@ async function leaveToHome() {
   disconnectRoomListener();
   state.roomCode = null;
   state.room = null;
+  state.draftAnswer = "";
   showHome();
 }
 
