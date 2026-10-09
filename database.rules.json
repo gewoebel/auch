@@ -1,0 +1,62 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "sessions": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid",
+        ".validate": "!newData.exists() || (newData.hasChildren(['roomCode']) && newData.child('roomCode').isString() && newData.child('roomCode').val().matches(/^[0-9]{4}$/))"
+      }
+    },
+    "rooms": {
+      "$room": {
+        ".read": "auth != null",
+        ".write": "auth != null && ((!data.exists() && newData.child('hostId').val() === auth.uid && $room.matches(/^[0-9]{4}$/)) || (data.exists() && now - data.child('lastActivity').val() > 21600000 && newData.child('hostId').val() === auth.uid) || (data.exists() && data.child('hostId').val() === auth.uid && !newData.exists()))",
+        "hostId": {
+          ".write": "auth != null && data.parent().child('deputyId').val() === auth.uid && data.parent().child('paused').val() === true && now - data.parent().child('players').child(data.val()).child('lastSeen').val() >= 120000",
+          ".validate": "newData.isString() && newData.val() === auth.uid"
+        },
+        "deputyId": {
+          ".write": "auth != null && data.parent().child('hostId').val() === auth.uid",
+          ".validate": "newData.val() === '' || newData.parent().child('players').child(newData.val()).exists()"
+        },
+        "status": {
+          ".write": "auth != null && data.parent().child('hostId').val() === auth.uid",
+          ".validate": "newData.val() === 'lobby' || newData.val() === 'question' || newData.val() === 'answer' || newData.val() === 'reveal' || newData.val() === 'scoring' || newData.val() === 'results' || newData.val() === 'ended'"
+        },
+        "paused": {
+          ".write": "auth != null && (data.parent().child('hostId').val() === auth.uid || data.parent().child('deputyId').val() === auth.uid)",
+          ".validate": "newData.isBoolean()"
+        },
+        "createdAt": { ".write": "auth != null && data.parent().child('hostId').val() === auth.uid", ".validate": "newData.isNumber()" },
+        "lastActivity": { ".write": "auth != null && data.parent().child('hostId').val() === auth.uid", ".validate": "newData.isNumber()" },
+        "round": { ".write": "auth != null && data.parent().child('hostId').val() === auth.uid", ".validate": "newData.isNumber() && newData.val() >= 0" },
+        "maxPlayers": { ".write": "auth != null && data.parent().child('hostId').val() === auth.uid", ".validate": "newData.val() === 8" },
+        "questionIndex": { ".write": "auth != null && data.parent().child('hostId').val() === auth.uid", ".validate": "!newData.exists() || (newData.isNumber() && newData.val() >= 0)" },
+        "phaseEndsAt": { ".write": "auth != null && data.parent().child('hostId').val() === auth.uid", ".validate": "!newData.exists() || newData.isNumber()" },
+        "usedQuestions": { ".write": "auth != null && data.parent().child('hostId').val() === auth.uid" },
+        "winners": { ".write": "auth != null && data.parent().child('hostId').val() === auth.uid" },
+        "scoringBaseScores": { ".write": "auth != null && data.parent().child('hostId').val() === auth.uid" },
+        "answers": {
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid && data.parent().parent().child('status').val() === 'answer' && now <= data.parent().parent().child('phaseEndsAt').val()",
+            ".validate": "newData.hasChildren(['text','submittedAt']) && newData.child('text').isString() && newData.child('text').val().length > 0 && newData.child('text').val().length <= 60 && newData.child('submittedAt').isNumber()"
+          }
+        },
+        "players": {
+          "$uid": {
+            ".write": "auth != null && ((data.parent().parent().child('hostId').val() === auth.uid) || (!newData.exists() && auth.uid === $uid) || (!data.exists() && newData.exists() && auth.uid === $uid && data.parent().parent().child('status').val() === 'lobby' ))",
+            "name": { ".write": "auth != null && auth.uid === $uid && data.parent().parent().parent().child('status').val() === 'lobby'", ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 24" },
+            "score": { ".write": "auth != null && data.parent().parent().parent().child('hostId').val() === auth.uid", ".validate": "newData.isNumber() && newData.val() >= 0" },
+            "online": { ".write": "auth != null && auth.uid === $uid", ".validate": "newData.isBoolean()" },
+            "joinedAt": { ".write": "auth != null && auth.uid === $uid && !data.exists()", ".validate": "newData.isNumber()" },
+            "lastSeen": { ".write": "auth != null && auth.uid === $uid", ".validate": "newData.isNumber()" },
+            "$other": { ".validate": false }
+          }
+        },
+        "$other": { ".validate": false }
+      }
+    }
+  }
+}
