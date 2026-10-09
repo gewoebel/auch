@@ -1,4 +1,4 @@
-const CACHE = "auch-v1";
+const CACHE = "auch-v2";
 const APP_SHELL = [
   "./",
   "./index.html",
