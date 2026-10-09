@@ -35,12 +35,22 @@
         "maxPlayers": { ".write": "auth != null && data.parent().child('hostId').val() === auth.uid", ".validate": "newData.val() === 8" },
         "questionIndex": { ".write": "auth != null && data.parent().child('hostId').val() === auth.uid", ".validate": "!newData.exists() || (newData.isNumber() && newData.val() >= 0)" },
         "phaseEndsAt": { ".write": "auth != null && data.parent().child('hostId').val() === auth.uid", ".validate": "!newData.exists() || newData.isNumber()" },
-        "usedQuestions": { ".write": "auth != null && data.parent().child('hostId').val() === auth.uid" },
-        "winners": { ".write": "auth != null && data.parent().child('hostId').val() === auth.uid" },
-        "scoringBaseScores": { ".write": "auth != null && data.parent().child('hostId').val() === auth.uid" },
-        "answers": {
+                "usedQuestions": {
+          ".write": "auth != null && data.parent().child('hostId').val() === auth.uid"
+        },
+        "winners": {
+          ".write": "auth != null && data.parent().child('hostId').val() === auth.uid",
+          ".validate": "!newData.exists() || newData.hasChildren()"
+        },
+        "scoringBaseScores": {
+          ".write": "auth != null && data.parent().child('hostId').val() === auth.uid",
+          ".validate": "!newData.exists() || newData.hasChildren()"
+        },
+                "answers": {
+          ".write": "auth != null && data.parent().child('hostId').val() === auth.uid",
+          ".validate": "!newData.exists() || newData.hasChildren()",
           "$uid": {
-            ".write": "auth != null && auth.uid === $uid && data.parent().parent().child('status').val() === 'answer' && now <= data.parent().parent().child('phaseEndsAt').val()",
+            ".write": "auth != null && ((data.parent().parent().child('hostId').val() === auth.uid) || (auth.uid === $uid && data.parent().parent().child('status').val() === 'answer' && now <= data.parent().parent().child('phaseEndsAt').val()))",
             ".validate": "newData.hasChildren(['text','submittedAt']) && newData.child('text').isString() && newData.child('text').val().length > 0 && newData.child('text').val().length <= 60 && newData.child('submittedAt').isNumber()"
           }
         },
