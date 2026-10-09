@@ -6,6 +6,7 @@
  */
 export const firebaseConfig = {
   apiKey: "AIzaSyBnBpingnWkqRPdKu_bCU00sztPKIqashk",
+  databaseURL: "https://auch-spiel-default-rtdb.europe-west1.firebasedatabase.app",
   authDomain: "auch-spiel.firebaseapp.com",
   projectId: "auch-spiel",
   storageBucket: "auch-spiel.firebasestorage.app",
