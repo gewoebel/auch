@@ -1248,3 +1248,5 @@ if ("serviceWorker" in navigator) {
 }
 
 initFirebase();
+
+//Test
