@@ -557,7 +557,7 @@ function createAnswerForm() {
   form.className = "answer-form";
   form.id = "answer-form";
 
-  iif (state.draftRound !== state.room.round) {
+  if (state.draftRound !== state.room.round) {
     state.draftRound = state.room.round;
     state.draftAnswer = "";
     state.draftRound = null;
