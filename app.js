@@ -26,6 +26,7 @@ const state = {
   singleWarningArmed: false,
   signals: false,
   draftAnswer: "",
+  draftRound: null,
   online: navigator.onLine
 };
 
@@ -479,6 +480,7 @@ async function startGame() {
 
 async function beginNextRound() {
   state.draftAnswer = "";
+  state.draftRound = null;
   const used = new Set(Object.keys(state.room.usedQuestions || {}).map(Number));
   const available = QUESTIONS.map((_, index) => index).filter((index) => !used.has(index));
 
@@ -554,6 +556,12 @@ function createAnswerForm() {
   const form = document.createElement("form");
   form.className = "answer-form";
   form.id = "answer-form";
+
+  iif (state.draftRound !== state.room.round) {
+    state.draftRound = state.room.round;
+    state.draftAnswer = "";
+    state.draftRound = null;
+  }
 
   const current = state.room.answers?.[state.uid]?.text || "";
   const draft = state.draftAnswer || current;
@@ -909,6 +917,7 @@ function renderEnded() {
 
 async function rematch() {
   state.draftAnswer = "";
+  state.draftRound = null;
   
   const patch = {
     status: "lobby",
@@ -996,6 +1005,7 @@ async function handleRemovedOrClosed() {
   state.roomCode = null;
   state.room = null;
   state.draftAnswer = "";
+  state.draftRound = null;
   roomPill.hidden = true;
   showHome();
 
@@ -1020,6 +1030,7 @@ async function leaveToHome() {
   state.roomCode = null;
   state.room = null;
   state.draftAnswer = "";
+  state.draftRound = null;
   showHome();
 }
 
