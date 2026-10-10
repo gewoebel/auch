@@ -557,14 +557,15 @@ function createAnswerForm() {
   form.className = "answer-form";
   form.id = "answer-form";
 
-  if (state.draftRound !== state.room.round) {
-    state.draftRound = state.room.round;
-    state.draftAnswer = "";
-    state.draftRound = null;
-  }
+const roundKey = `${state.room.gameId || "room"}:${state.room.round ?? -1}`;
+
+if (state.draftRound !== roundKey) {
+  state.draftRound = roundKey;
+  state.draftAnswer = "";
+}
 
   const current = state.room.answers?.[state.uid]?.text || "";
-  const draft = state.draftAnswer || current;
+  const draft = state.draftAnswer !== "" ? state.draftAnswer : current;
 
   form.innerHTML = `
     <div class="field">
