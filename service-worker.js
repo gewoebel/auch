@@ -1,4 +1,6 @@
-const CACHE = "auch-v9";
+const CACHE = "auch-v10";
+const CACHE_PREFIX = "auch-";
+
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -12,38 +14,89 @@ const APP_SHELL = [
 ];
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(APP_SHELL)));
-  self.skipWaiting();
+  event.waitUntil(
+    (async () => {
+      const cache = await caches.open(CACHE);
+      await cache.addAll(APP_SHELL);
+      await self.skipWaiting();
+    })()
+  );
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key))))
+    (async () => {
+      const keys = await caches.keys();
+
+      await Promise.all(
+        keys
+          .filter(
+            (key) =>
+              key.startsWith(CACHE_PREFIX) &&
+              key !== CACHE
+          )
+          .map((key) => caches.delete(key))
+      );
+
+      await self.clients.claim();
+    })()
   );
-  self.clients.claim();
 });
 
 self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET" || new URL(event.request.url).origin !== self.location.origin) return;
+  const request = event.request;
 
-  if (event.request.mode === "navigate") {
-    event.respondWith(
-      fetch(event.request)
-        .then((response) => {
-          const copy = response.clone();
-          caches.open(CACHE).then((cache) => cache.put("./index.html", copy));
-          return response;
-        })
-        .catch(() => caches.match("./index.html"))
-    );
+  if (request.method !== "GET") return;
+
+  const url = new URL(request.url);
+  const scope = new URL(self.registration.scope);
+
+  if (
+    url.origin !== self.location.origin ||
+    !url.pathname.startsWith(scope.pathname)
+  ) {
     return;
   }
 
+  // Externe Firebase-Verbindungen werden nicht zwischengespeichert.
+  const cacheKey =
+    request.mode === "navigate"
+      ? new URL("./index.html", self.registration.scope).href
+      : request;
+
   event.respondWith(
-    caches.match(event.request).then((cached) => cached || fetch(event.request).then((response) => {
-      const copy = response.clone();
-      caches.open(CACHE).then((cache) => cache.put(event.request, copy));
-      return response;
-    }))
+    (async () => {
+      const cache = await caches.open(CACHE);
+
+      try {
+        const response = await fetch(request, {
+          cache: "no-cache"
+        });
+
+        if (response.ok) {
+          const copy = response.clone();
+
+          event.waitUntil(
+            cache.put(cacheKey, copy).catch(() => {})
+          );
+        }
+
+        return response;
+      } catch (error) {
+        const cached = await cache.match(cacheKey);
+
+        if (cached) return cached;
+
+        return new Response(
+          "Die Datei ist offline nicht verfügbar. Bitte die Internetverbindung prüfen.",
+          {
+            status: 503,
+            headers: {
+              "Content-Type": "text/plain; charset=utf-8"
+            }
+          }
+        );
+      }
+    })()
   );
 });
